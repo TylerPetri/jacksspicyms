@@ -95,3 +95,8 @@ Usage of ./jacksspicyms:
         pusher server uses SSL (true or false)
 ~~~~
 
+## For the MOD peeps
+
+Adding tables using soda:
+- `soda generate fizz AddSomethingToSomethingTable` creates your /migrations/...up.fizz file where you soda to your sql
+- `soda migrate` to migrate your ...up.fizz file to your (already running) database
