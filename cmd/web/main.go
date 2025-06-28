@@ -44,7 +44,7 @@ func main() {
 
 	// print info
 	log.Printf("******************************************")
-	log.Printf("** %sJacksspicyms%s v%s built in %s", "\033[31m", "\033[0m", jacksspicymsVersion, runtime.Version())
+	log.Printf("** %sVigilate%s v%s built in %s", "\033[31m", "\033[0m", jacksspicymsVersion, runtime.Version())
 	log.Printf("**----------------------------------------")
 	log.Printf("** Running with %d Processors", runtime.NumCPU())
 	log.Printf("** Running on %s", runtime.GOOS)
