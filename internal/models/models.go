@@ -40,7 +40,7 @@ type Preference struct {
 	UpdatedAt  time.Time
 }
 
-// Host model
+// Host is the model for hosts
 type Host struct {
 	ID            int
 	HostName      string
@@ -55,7 +55,7 @@ type Host struct {
 	UpdatedAt     time.Time
 }
 
-// Services model
+// Services is the model for services
 type Services struct {
 	ID          int
 	ServiceName string
@@ -65,7 +65,7 @@ type Services struct {
 	UpdatedAt   time.Time
 }
 
-// HostService model
+// HostService is the model for host services
 type HostService struct {
 	ID             int
 	HostID         int
