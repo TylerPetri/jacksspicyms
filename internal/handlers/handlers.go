@@ -15,7 +15,7 @@ import (
 	"github.com/TylerPetri/jacksspicyms/internal/models"
 	"github.com/TylerPetri/jacksspicyms/internal/repository"
 	"github.com/TylerPetri/jacksspicyms/internal/repository/dbrepo"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 // Repo is the repository
