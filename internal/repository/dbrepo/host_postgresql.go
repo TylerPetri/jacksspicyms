@@ -443,24 +443,23 @@ func (m *postgresDBRepo) GetHostServiceByID(id int) (models.HostService, error) 
 	return hs, nil
 }
 
+// GetServicesToMonitor gets all host services we want to monitor
 func (m *postgresDBRepo) GetServicesToMonitor() ([]models.HostService, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	query := `
-			select hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number,
+		select hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number,
 			hs.schedule_unit, hs.last_check, hs.status, hs.created_at, hs.updated_at,
 			s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at,
 			h.host_name
-
 		from 
-			host_services hs
+		     host_services hs
 			left join services s on (hs.service_id = s.id)
 			left join hosts h on (h.id = hs.host_id)
 		where
 			h.active = 1
-			and hs.active = 1
-	`
+			and hs.active = 1`
 
 	var services []models.HostService
 

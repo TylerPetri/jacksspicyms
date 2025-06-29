@@ -35,7 +35,7 @@ type jsonResp struct {
 }
 
 // ScheduledCheck performs a scheduled check on a host service by id
-func (repo *DBRepo) ScheduleCheck(hostServiceID int) {
+func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 
 }
 
