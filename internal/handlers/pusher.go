@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"github.com/pusher/pusher-http-go"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/pusher/pusher-http-go"
 )
 
 // PusherAuth authenticates the user to our pusher server
@@ -32,15 +33,4 @@ func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(response)
-}
-
-// TestPusher just tests pusher - delete this before going into production
-func (repo *DBRepo) TestPusher(w http.ResponseWriter, r *http.Request) {
-	data := make(map[string]string)
-	data["message"] = "Hello, world"
-
-	err := repo.App.WsClient.Trigger("public-channel", "test-event", data)
-	if err != nil {
-		log.Println(err)
-	}
 }
