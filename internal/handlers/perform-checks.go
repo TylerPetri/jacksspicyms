@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TylerPetri/jacksspicyms/internal/certificateutils"
 	"github.com/TylerPetri/jacksspicyms/internal/channeldata"
 	"github.com/TylerPetri/jacksspicyms/internal/helpers"
 	"github.com/TylerPetri/jacksspicyms/internal/models"
@@ -19,11 +20,11 @@ import (
 
 const (
 	// HTTP is the unencrypted web service check
-	HTTP = 1
+	HTTP = 2
 	// HTTPS is the encrypted web service check
-	HTTPS = 2
+	HTTPS = 3
 	// SSLCertificate is ssl certificate check
-	SSLCertificate = 3
+	SSLCertificate = 4
 )
 
 // jsonResp describes the JSON response sent back to client
@@ -181,7 +182,10 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 	switch hs.ServiceID {
 	case HTTP:
 		msg, newStatus = testHTTPForHost(h.URL)
-		break
+	case HTTPS:
+		msg, newStatus = testHTTPSForHost(h.URL)
+	case SSLCertificate:
+		msg, newStatus = testSSLForHost(h.URL)
 	}
 
 	// broadcast to clients if appropriate
@@ -313,6 +317,79 @@ func testHTTPForHost(url string) (string, string) {
 	}
 
 	return fmt.Sprintf("%s - %s", url, resp.Status), "healthy"
+}
+
+// testHTTPSForHost tests HTTPS service
+func testHTTPSForHost(url string) (string, string) {
+	if strings.HasSuffix(url, "/") {
+		url = strings.TrimSuffix(url, "/")
+	}
+
+	url = strings.Replace(url, "http://", "http://", -1)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Sprintf("%s - %s", url, "error connecting"), "problem"
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Sprintf("%s - %s", url, resp.Status), "problem"
+	}
+
+	return fmt.Sprintf("%s - %s", url, resp.Status), "healthy"
+}
+
+// scanHost gets cert details from an internet host
+func scanHost(hostname string, certDetailsChannel chan certificateutils.CertificateDetails, errorsChannel chan error) {
+	res, err := certificateutils.GetCertificateDetails(hostname, 10)
+	if err != nil {
+		errorsChannel <- err
+	} else {
+		certDetailsChannel <- res
+	}
+}
+
+// testSSLForHost test SSL service
+func testSSLForHost(url string) (string, string) {
+	if strings.HasPrefix(url, "https://") {
+		url = strings.Replace(url, "https://", "", -1)
+	}
+
+	if strings.HasPrefix(url, "http://") {
+		url = strings.Replace(url, "http://", "", -1)
+	}
+
+	var certDetailsChannel chan certificateutils.CertificateDetails
+	var errorsChannel chan error
+	certDetailsChannel = make(chan certificateutils.CertificateDetails, 1)
+	errorsChannel = make(chan error, 1)
+
+	var msg, newStatus string
+
+	scanHost(url, certDetailsChannel, errorsChannel)
+
+	for i, certDetailsInQueue := 0, len(certDetailsChannel); i < certDetailsInQueue; i++ {
+		certDetails := <-certDetailsChannel
+		certificateutils.CheckExpirationStatus(&certDetails, 30)
+
+		if certDetails.ExpiringSoon {
+
+			if certDetails.DaysUntilExpiration < 7 {
+				msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+				newStatus = "problem"
+			} else {
+				msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+				newStatus = "warning"
+			}
+
+		} else {
+			msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+			newStatus = "healthy"
+		}
+	}
+
+	return msg, newStatus
 }
 
 func (repo *DBRepo) addToMonitorMap(hs models.HostService) {
