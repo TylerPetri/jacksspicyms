@@ -5,8 +5,8 @@ import (
 
 	"github.com/TylerPetri/jacksspicyms/internal/channeldata"
 	"github.com/TylerPetri/jacksspicyms/internal/driver"
+	"github.com/TylerPetri/jacksspicyms/internal/models"
 	"github.com/alexedwards/scs/v2"
-	"github.com/pusher/pusher-http-go"
 	"github.com/robfig/cron/v3"
 )
 
@@ -19,7 +19,7 @@ type AppConfig struct {
 	MonitorMap    map[int]cron.EntryID
 	PreferenceMap map[string]string
 	Scheduler     *cron.Cron
-	WsClient      pusher.Client
+	WsClient      models.WSClient
 	PusherSecret  string
 	TemplateCache map[string]*template.Template
 	MailQueue     chan channeldata.MailJob

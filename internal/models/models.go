@@ -2,8 +2,11 @@ package models
 
 import (
 	"errors"
-	"github.com/robfig/cron/v3"
+	"net/http"
 	"time"
+
+	"github.com/pusher/pusher-http-go"
+	"github.com/robfig/cron/v3"
 )
 
 var (
@@ -107,4 +110,21 @@ type Event struct {
 	Message       string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+type WSClient interface {
+	AuthenticatePrivateChannel(params []byte) ([]byte, error)
+	AuthenticatePresenceChannel(params []byte, member pusher.MemberData) ([]byte, error)
+
+	Channel(name string, queries map[string]string) (*pusher.Channel, error)
+	Channels(queries map[string]string) (*pusher.ChannelsList, error)
+	GetChannelUsers(name string) (*pusher.Users, error)
+
+	Trigger(channel, eventName string, data interface{}) error
+	TriggerExclusive(channel, eventName string, data interface{}, socketID string) error
+	TriggerMulti(channels []string, eventName string, data interface{}) error
+	TriggerMultiExclusive(channels []string, eventName string, data interface{}, socketID string) error
+	TriggerBatch(events []pusher.Event) error
+
+	Webhook(header http.Header, body []byte) (*pusher.Webhook, error)
 }
