@@ -52,9 +52,11 @@ func (m *postgresDBRepo) InsertHost(h models.Host) (int, error) {
 			log.Println(err)
 			return 0, err
 		}
+
 		stmt := `
-			insert into host_services (host_id, service_id, active, schedule_number, schedule_unit,
-			status, created_at, updated_at) values ($1, $2, 0, 3, 'm', 'pending', $3, $4)`
+			insert into host_services 
+		    	(host_id, service_id, active, schedule_number, schedule_unit,
+				status, created_at, updated_at) values ($1, $2, 0, 3, 'm', 'pending', $3, $4)`
 
 		_, err = m.DB.ExecContext(ctx, stmt, newID, svcID, time.Now(), time.Now())
 		if err != nil {
@@ -103,7 +105,7 @@ func (m *postgresDBRepo) GetHostByID(id int) (models.Host, error) {
 			select 
 				hs.id, hs.host_id, hs.service_id, hs.active, hs.schedule_number, hs.schedule_unit, 
 				hs.last_check, hs.status, hs.created_at, hs.updated_at,
-				s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at
+				s.id, s.service_name, s.active, s.icon, s.created_at, s.updated_at, hs.last_message
 			from 
 				host_services hs
 				left join services s on (s.id = hs.service_id)
@@ -138,6 +140,7 @@ func (m *postgresDBRepo) GetHostByID(id int) (models.Host, error) {
 			&hs.Service.Icon,
 			&hs.Service.CreatedAt,
 			&hs.Service.UpdatedAt,
+			&hs.LastMessage,
 		)
 		if err != nil {
 			log.Println(err)

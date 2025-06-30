@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	hostnameEmptyError = errors.New("hostname empty")
+	errHostNameEmpty = errors.New("hostname empty")
 )
 
 // ResultError holds the result of certificate errors
@@ -72,6 +72,7 @@ func ReadCertificateDetailsFromFile(publicCertFile, privateCertFile string) ([]C
 	var certDetails []CertificateDetails
 	var blocks []byte
 
+	// change to os.ReadFile
 	rest, err := os.ReadFile(publicCertFile)
 	if err != nil {
 		return certDetails, err
@@ -123,7 +124,7 @@ func GetCertificateDetails(hostname string, connectionTimeout int) (CertificateD
 	var certDetails CertificateDetails
 
 	if hostname == "" {
-		return CertificateDetails{}, hostnameEmptyError
+		return CertificateDetails{}, errHostNameEmpty
 	}
 
 	if !strings.Contains(hostname, ":") {
