@@ -71,7 +71,16 @@ func (repo *DBRepo) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 
 // Events displays the events page
 func (repo *DBRepo) Events(w http.ResponseWriter, r *http.Request) {
-	err := helpers.RenderPage(w, r, "events", nil, nil)
+	events, err := repo.DB.GetAllEvents()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	data := make(jet.VarMap)
+	data.Set("events", events)
+
+	err = helpers.RenderPage(w, r, "events", data, nil)
 	if err != nil {
 		printTemplateError(w, err)
 	}
@@ -387,6 +396,19 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 		resp.OK = false
 	}
 
+	// broadcast
+	hs, _ := repo.DB.GetHostServiceByHostIDServiceID(hostID, serviceID)
+	h, _ := repo.DB.GetHostByID(hostID)
+
+	// add or remove from schedule
+	if active == 1 {
+		repo.pushScheduleChangedEvent(hs, "pending")
+		repo.pushStatusChangedEvent(h, hs, "pending")
+		repo.addToMonitorMap(hs)
+	} else {
+		repo.removeFromMonitorMap(hs)
+	}
+
 	out, _ := json.MarshalIndent(resp, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
@@ -419,17 +441,14 @@ func (repo *DBRepo) SetSystemPref(w http.ResponseWriter, r *http.Request) {
 // ToggleMonitoring turns monitoring on and off
 func (repo *DBRepo) ToggleMonitoring(w http.ResponseWriter, r *http.Request) {
 	enabled := r.PostForm.Get("enabled")
-	log.Println(enabled)
 
 	if enabled == "1" {
 		// start monitoring
-		log.Println("Turning monitoring on")
 		repo.App.PreferenceMap["monitoring_live"] = "1"
 		repo.StartMonitoring()
 		repo.App.Scheduler.Start()
 	} else {
 		// stop monitoring
-		log.Println("Turning monitoring off")
 		repo.App.PreferenceMap["monitoring_live"] = "0"
 
 		// remove all items in map from schedule
@@ -450,7 +469,7 @@ func (repo *DBRepo) ToggleMonitoring(w http.ResponseWriter, r *http.Request) {
 		repo.App.Scheduler.Stop()
 
 		data := make(map[string]string)
-		data["message"] = "Monitoring is off..."
+		data["message"] = "Monitoring is off!"
 		err := app.WsClient.Trigger("public-channel", "app-stopping", data)
 		if err != nil {
 			log.Println(err)
